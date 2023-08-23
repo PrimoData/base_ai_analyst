@@ -1,0 +1,529 @@
+system,user,assistant
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.",what is the number of daily active users transferring assets to Base?," WITH
+  daus as (
+  SELECT
+  distinct from_address as users,
+  trunc(block_timestamp,'week') as weeks,
+  count(distinct trunc(block_timestamp,'day')) as active_days
+  from base.core.fact_token_transfers
+  group by 1,2
+  having active_days>=4
+  ),
+active_users as (
+  SELECT
+  trunc(block_timestamp,'week') as date,
+  case when from_address in (select users from daus) then 'DAU'
+  else 'No DAU' end as type,
+  count(distinct from_address) as n_users,
+  count(distinct tx_hash) as txs
+  from base.core.fact_token_transfers
+  group by 1,2
+)
+select * from active_users 
+where date>=current_date-interval '{{Months}} MONTHS'
+and date<current_date
+order by 1 asc "
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.",what is the number of daily active users swapping assets on Base?," WITH
+  daus as (
+  SELECT
+  distinct from_address as users,
+  trunc(block_timestamp,'week') as weeks,
+  count(distinct trunc(block_timestamp,'day')) as active_days
+  from base.core.fact_transactions
+where origin_function_signature in ('0xfe029156','0x5c11d795','0x7ff36ab5')
+  group by 1,2
+  having active_days>=4
+  ),
+active_users as (
+  SELECT
+  trunc(block_timestamp,'week') as date,
+  case when from_address in (select users from daus) then 'DAU'
+  else 'No DAU' end as type,
+  count(distinct from_address) as n_users,
+  count(distinct tx_hash) as txs
+  from base.core.fact_transactions
+where origin_function_signature in ('0xfe029156','0x5c11d795','0x7ff36ab5')
+
+  group by 1,2
+)
+select * from active_users 
+where date>=current_date-interval '{{Months}} MONTHS'
+and date<current_date
+order by 1 asc "
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.",what is the number of daily active users using NFTs on Base?,"WITH
+  daus as (
+  SELECT
+  distinct nft_from_address as users,
+  trunc(block_timestamp,'week') as weeks,
+  count(distinct trunc(block_timestamp,'day')) as active_days
+  from base.core.ez_nft_transfers
+  group by 1,2
+  having active_days>=4
+  ),
+active_users as (
+  SELECT
+  trunc(block_timestamp,'week') as date,
+  case when nft_from_address in (select users from daus) then 'DAU'
+  else 'No DAU' end as type,
+  count(distinct nft_from_address) as n_users,
+  count(distinct tx_hash) as txs
+  from base.core.ez_nft_transfers
+  group by 1,2
+)
+select * from active_users 
+where date>=current_date-interval '{{Months}} MONTHS'
+and date<current_date
+order by 1 asc "
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.",what is the number of daily Base transactions by type of user?," WITH
+  daus as (
+  SELECT
+  distinct from_address as users,
+  trunc(block_timestamp,'week') as weeks,
+  count(distinct trunc(block_timestamp,'day')) as active_days
+  from base.core.fact_transactions
+  group by 1,2
+  having active_days>=4
+  ),
+active_users as (
+  SELECT
+  trunc(block_timestamp,'week') as date,
+  case when from_address in (select users from daus) then 'DAU'
+  else 'No DAU' end as type,
+  count(distinct from_address) as n_users,
+  count(distinct tx_hash) as txs
+  from base.core.fact_transactions
+  group by 1,2
+)
+select * from active_users 
+where date>=current_date-interval '{{Months}} MONTHS'
+and date <current_date
+order by 1 asc 
+ "
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.",what is the daily and total number of transactions on Base as well as the transactions per section and transaction success rate?,"select
+  block_timestamp::date as ""Date"",
+  count(distinct tx_hash) as ""Transactions"",
+  sum(""Transactions"") over (order by ""Date"") as ""Total Transactions"",
+  ""Transactions"" / 86400 as ""TPS"",
+  sum(case when status = 'SUCCESS' then 1 else 0 end) / ""Transactions"" * 100 as ""Success Rate"",
+  avg(""TPS"") over (order by ""Date"") as ""Average TPS"",
+  avg(""Success Rate"") over (order by ""Date"") as ""Average Success Rate""
+from
+  base.core.fact_transactions
+where
+  block_timestamp::date < current_date
+group by
+  ""Date""
+qualify
+  ""Date"" >= '2023-07-13'
+order by
+  ""Date"" desc"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what is the daily numbers of users on base by user type?
+","with
+  active as (
+    select
+      block_timestamp::date as date,
+      count(distinct from_address) as active_users
+    from
+      base.core.fact_transactions
+    where
+      block_timestamp::date < current_date
+    group by
+      date
+  ),
+  new as (
+    select
+      first_timestamp::date as date,
+      count(distinct from_address) as new_users,
+      sum(new_users) over (order by date) as total_users
+    from
+      (
+        select
+          from_address,
+          min(block_timestamp) as first_timestamp
+        from
+          base.core.fact_transactions
+        where
+          block_timestamp::date < current_date
+        group by
+          from_address
+      )
+    group by
+      date
+  )
+select
+  active.date as ""Date"",
+  active.active_users as ""Active Users"",
+  new.new_users as ""New Users"",
+  new.total_users as ""Total Users"",
+  floor(avg(""Active Users"") over (order by ""Date"")) as ""MA"",
+  floor(avg(""Active Users"") over (order by ""Date"" rows between 7 preceding and current row)) as ""MA-7D"",
+  floor(avg(""Active Users"") over (order by ""Date"" rows between 14 preceding and current row)) as ""MA-14D"",
+  floor(avg(""Active Users"") over (order by ""Date"" rows between 20 preceding and current row)) as ""MA-21D"",
+  greatest(""MA"", ""MA-21D"", ""MA-14D"", ""MA-7D"") as ""MA-Max"",
+  least(""MA"", ""MA-21D"", ""MA-14D"", ""MA-7D"") as ""MA-Min""
+from
+  active
+  left join new on active.date = new.date
+qualify
+  ""Date"" >= '2023-07-13'
+order by
+  ""Date"" desc"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what is the daily total and median gas fees for transactions on base?","select
+  block_timestamp::date as ""Date"",
+  sum(tx_fee) as ""Total Fees"",
+  avg(tx_fee) as ""Average Fee"",
+  median(tx_fee) as ""Median Fee"",
+  sum(gas_used) as ""Total Gas Used"",
+  avg(gas_used) as ""Average Gas Used"",
+  median(gas_used) as ""Median Gas Used"",
+  avg(gas_price) as ""Average Gas Price"",
+  median(gas_price) as ""Median Gas Price""
+from
+  base.core.fact_transactions
+where
+  block_timestamp::date < current_date
+group by
+  ""Date""
+qualify
+  ""Date"" >= '2023-07-13'
+order by
+  ""Date"" desc"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what is the daily number of transactions on Base by protocol?","select
+  block_timestamp::date as ""Date"",
+  case origin_to_address
+    when '0x27d2decb4bfc9c76f0309b8e88dec3a601fe25a8' then 'Bald'
+    when '0x3666f603cc164936c1b87e207f36beba4ac5f18a' then 'Base Bridge'
+    when '0x1fc10ef15e041c5d3c54042e52eb0c54cb9b710c' then 'Base Genesis NFT'
+    when '0xc85f505b43fcbffbf7808a55bc4e8cecac18d85b' then 'Based'
+    when '0xc4623408e3060f3c57e1a8d3716123f478e5d82f' then 'CBSwap'
+    when '0xfcd3842f85ed87ba2889b4d35893403796e67ff1' then 'LeetSwap'
+    when '0xf882c982a95f4d3e8187efe12713835406d11840' then 'Merkly ONFT'
+    when '0xb588a34afa5be3f3af703159fb6586a2caf04ba8' then 'OasisSwap'
+    when '0x327df1e6de05895d2ab08513aadd9313fe505d86' then 'PancakeSwap'
+    when '0x89518f11346c761c48cb7086bbd2008806f75149' then 'Pira Passport'
+    when '0xb21d7fdc1b8e3cdbe2061e1f05fd094f46ef2f47' then 'Rainbow Road'
+    when '0x4cf76043b3f97ba06917cbd90f9e3a2aac1b306e' then 'Uniswap'
+    when '0xbceb0ee20ed1489dbea44db08a1e95004ca2753a' then 'Uniswap'
+    when '0xfb7ef66a7e61224dd6fcd0d7d9c3be5c8b049b9f' then 'Uniswap'
+    when '0xaaa3b1f1bd7bcc97fd1917c18ade665c5d31f066' then 'Uniswap'
+    when '0x4200000000000000000000000000000000000006' then 'Wrapped Ether'
+    else 'Unlabeled'
+  end as ""Label"",
+  count(distinct tx_hash) as ""Transactions"",
+  count(distinct origin_from_address) as ""Users""
+from
+  base.core.ez_decoded_event_logs
+where
+  tx_status = 'SUCCESS'
+  and block_timestamp::date between '2023-07-13' and (current_date - 1)
+group by
+  ""Date"",
+  ""Label""
+order by
+  ""Date"" desc,
+  ""Transactions"" desc"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what is the total number of users and transactions on Base by protocol?","select
+  origin_to_address as ""Address"",
+  case origin_to_address
+    when '0x27d2decb4bfc9c76f0309b8e88dec3a601fe25a8' then 'Bald'
+    when '0x3666f603cc164936c1b87e207f36beba4ac5f18a' then 'Base Bridge'
+    when '0x1fc10ef15e041c5d3c54042e52eb0c54cb9b710c' then 'Base Genesis NFT'
+    when '0xc85f505b43fcbffbf7808a55bc4e8cecac18d85b' then 'Based'
+    when '0xc4623408e3060f3c57e1a8d3716123f478e5d82f' then 'CBSwap'
+    when '0xfcd3842f85ed87ba2889b4d35893403796e67ff1' then 'LeetSwap'
+    when '0xf882c982a95f4d3e8187efe12713835406d11840' then 'Merkly ONFT'
+    when '0xb588a34afa5be3f3af703159fb6586a2caf04ba8' then 'OasisSwap'
+    when '0x327df1e6de05895d2ab08513aadd9313fe505d86' then 'PancakeSwap'
+    when '0x89518f11346c761c48cb7086bbd2008806f75149' then 'Pira Passport'
+    when '0xb21d7fdc1b8e3cdbe2061e1f05fd094f46ef2f47' then 'Rainbow Road'
+    when '0x4cf76043b3f97ba06917cbd90f9e3a2aac1b306e' then 'Uniswap'
+    when '0xbceb0ee20ed1489dbea44db08a1e95004ca2753a' then 'Uniswap'
+    when '0xfb7ef66a7e61224dd6fcd0d7d9c3be5c8b049b9f' then 'Uniswap'
+    when '0xaaa3b1f1bd7bcc97fd1917c18ade665c5d31f066' then 'Uniswap'
+    when '0x4200000000000000000000000000000000000006' then 'Wrapped Ether'
+    else 'Unlabeled'
+  end as ""Label"",
+  count(distinct tx_hash) as ""Transactions"",
+  count(distinct origin_from_address) as ""Users""
+from
+  base.core.ez_decoded_event_logs
+where
+  tx_status = 'SUCCESS'
+group by
+  ""Address"",
+  ""Label""
+order by
+  ""Transactions"" desc"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.",what are the top nft collections on Base by the number of holders?,"SELECT
+  nft_address,
+  project_name,
+  count(DISTINCT address) as holders
+--  sum(holding) as nfts_minted 
+
+FROM (
+SELECT
+  address,
+  project_name,
+  nft_address,
+  count(CASE when tx_type LIKE 'in' then 1 end) - count(CASE when tx_type LIKE 'out' then 1 end) as holding
+
+FROM (
+SELECT
+  project_name,
+  nft_address, 
+  'out' as tx_type,
+  nft_from_address as address
+  
+FROM base.core.ez_nft_transfers
+
+UNION
+
+SELECT
+  project_name,
+  nft_address, 
+  'in' as tx_type,
+  nft_to_address as address
+  
+FROM base.core.ez_nft_transfers
+)
+GROUP BY 1,2,3
+)
+WHERE not holding = 0
+and not address LIKE '0x0000000000000000000000000000000000000000'
+GROUP BY 1,2 
+ORDER by 3 DESC
+"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what is the total number of NFT sales hourly on Base on Coinbase NFT marketplace?","with tab1 as (
+SELECT 
+  tx_hash as tx,
+  eth_value
+
+FROM base.core.fact_transactions
+), tab2 as (
+SELECT 
+  block_timestamp,
+  tx_hash,
+  FULL_DECODED_LOG['data'][6]['value'] as token_address,
+  FULL_DECODED_LOG['data'][1]['value'] as seller,
+  FULL_DECODED_LOG['data'][2]['value'] as buyer
+
+FROM base.core.ez_decoded_event_logs
+WHERE FULL_DECODED_LOG:name LIKE 'ERC721OrderFilled'
+AND contract_address LIKE lower('0xdef1c0ded9bec7f1a1670819833240f027b25eff')
+ORDER by block_timestamp
+
+)
+
+SELECT 
+  date_trunc('hour', block_timestamp) as hour,
+  sum(ETH_VALUE) nft_sales_volume
+FROM tab2 as a
+  LEFT outer JOIN tab1 as b 
+    on a.tx_hash = b.tx
+
+GROUP BY 1 "
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what is the daily and cumulative number of new NFT contracts created on Base?
+","SELECT
+  *,
+  sum(new_nft_contracts) over (ORDER BY min_day) as total_contracts
+
+FROM (
+SELECT
+  min_day,
+  count(*) as new_nft_contracts
+
+FROM (
+SELECT 
+  NFT_ADDRESS,
+  min(date_trunc('day', block_timestamp)) as min_day
+FROM base.core.ez_nft_transfers
+WHERE nft_from_address LIKE '0x0000000000000000000000000000000000000000'
+GROUP BY 1
+)
+GROUP BY 1
+)
+"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what is the total number of Bridge to Base NFT mints and users?
+","SELECT
+  COUNT(TX_HASH) AS ""Number of mints"",
+  COUNT(DISTINCT NFT_TO_ADDRESS) AS ""Number of wallets""
+FROM
+  base.core.ez_nft_transfers
+WHERE
+  EVENT_TYPE = 'mint'
+AND
+  PROJECT_NAME = 'Bridge to Base'
+
+"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what are the top NFT collections by number of mints on Base?
+","SELECT
+  --BLOCK_TIMESTAMP as date,
+  PROJECT_NAME AS ""NFT Collection"",
+  COUNT(TX_HASH) AS ""NFTs minted""
+FROM
+  base.core.ez_nft_transfers
+WHERE
+  EVENT_TYPE = 'mint'
+AND 
+  PROJECT_NAME != ''
+GROUP BY 1
+ORDER BY 2 DESC"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.",what is the cumulative transfer volume on Base over time?,"with contracts as (
+select  ADDRESS ,SYMBOL 
+from base.core.dim_contracts
+group by 1 ,2 
+),
+prices as (
+select HOUR::date date ,   SYMBOL , 
+TOKEN_ADDRESS , DECIMALS,
+avg(price) price 
+from base.core.fact_hourly_token_prices
+group  by 1 , 2 ,3 ,4 order by 1 
+)
+select  
+block_timestamp::date date , 
+sum ((RAW_AMOUNT/pow(10,DECIMALS))*price) volume_usd,
+sum (volume_usd) over (order by block_timestamp::date ) cum_volume_USD
+from base.core.fact_token_transfers  t join prices p on TOKEN_ADDRESS = CONTRACT_ADDRESS
+and p.date =t.BLOCK_TIMESTAMP::date  
+group by 1 
+"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what is the cumulative transfer volume on Base over time by token?"," with contracts as (
+select  ADDRESS ,SYMBOL 
+from base.core.dim_contracts
+group by 1 ,2 
+),
+prices as (
+select HOUR::date date ,   SYMBOL , 
+TOKEN_ADDRESS , DECIMALS,
+avg(price) price 
+from base.core.fact_hourly_token_prices
+group  by 1 , 2 ,3 ,4 order by 1 
+)
+select  
+block_timestamp::date date ,
+ SYMBOL , 
+sum ((RAW_AMOUNT/pow(10,DECIMALS))*price) volume_usd,
+sum (volume_usd) over ( order by block_timestamp::date , symbol ) cum_volume_USD
+from base.core.fact_token_transfers  t join prices p on TOKEN_ADDRESS = CONTRACT_ADDRESS
+and p.date =t.BLOCK_TIMESTAMP::date  
+group by 1 ,2  order by date 
+"
+"You are an SQL assistant. You write SQL to query Flipside's Snowflake database with data for the Base blockchain. 
+
+The database has the following tables and columns:
+[{""TABLE_NAME"":""dim_contracts"",""COLUMN_NAMES"":[""created_block_number"",""decimals"",""creator_address"",""address"",""created_tx_hash"",""symbol"",""name"",""created_block_timestamp""]},{""TABLE_NAME"":""dim_labels"",""COLUMN_NAMES"":[""address_name"",""label_subtype"",""label_type"",""address"",""blockchain"",""creator"",""project_name""]},{""TABLE_NAME"":""ez_decoded_event_logs"",""COLUMN_NAMES"":[""origin_to_address"",""origin_function_signature"",""event_removed"",""tx_hash"",""block_number"",""full_decoded_log"",""tx_status"",""contract_name"",""data"",""event_index"",""event_name"",""block_timestamp"",""origin_from_address"",""contract_address"",""decoded_log"",""topics""]},{""TABLE_NAME"":""ez_nft_transfers"",""COLUMN_NAMES"":[""event_type"",""tx_hash"",""project_name"",""block_number"",""nft_from_address"",""event_index"",""nft_to_address"",""nft_address"",""erc1155_value"",""tokenid"",""block_timestamp""]},{""TABLE_NAME"":""fact_blocks"",""COLUMN_NAMES"":[""blockchain"",""size"",""parent_hash"",""gas_limit"",""sha3_uncles"",""block_header_json"",""block_number"",""network"",""uncle_blocks"",""extra_data"",""block_timestamp"",""difficulty"",""receipts_root"",""total_difficulty"",""hash"",""gas_used"",""tx_count""]},{""TABLE_NAME"":""fact_decoded_event_logs"",""COLUMN_NAMES"":[""event_index"",""block_timestamp"",""decoded_log"",""tx_hash"",""event_name"",""contract_address"",""full_decoded_log"",""block_number""]},{""TABLE_NAME"":""fact_event_logs"",""COLUMN_NAMES"":[""tx_status"",""data"",""tx_hash"",""_log_id"",""event_index"",""block_timestamp"",""topics"",""block_number"",""event_removed"",""contract_address"",""origin_from_address"",""origin_to_address"",""origin_function_signature""]},{""TABLE_NAME"":""fact_hourly_token_prices"",""COLUMN_NAMES"":[""is_imputed"",""decimals"",""symbol"",""token_address"",""hour"",""price""]},{""TABLE_NAME"":""fact_token_transfers"",""COLUMN_NAMES"":[""to_address"",""block_timestamp"",""from_address"",""raw_amount"",""raw_amount_precise"",""origin_function_signature"",""origin_to_address"",""contract_address"",""_log_id"",""tx_hash"",""origin_from_address"",""block_number""]},{""TABLE_NAME"":""fact_traces"",""COLUMN_NAMES"":[""type"",""tx_hash"",""to_address"",""trace_index"",""block_number"",""gas"",""from_address"",""eth_value"",""eth_value_precise_raw"",""block_timestamp"",""data"",""trace_status"",""error_reason"",""eth_value_precise"",""input"",""sub_traces"",""identifier"",""output"",""gas_used"",""tx_status""]},{""TABLE_NAME"":""fact_transactions"",""COLUMN_NAMES"":[""cumulative_gas_used"",""tx_fee_precise"",""tx_fee"",""l1_gas_used"",""position"",""l1_fee"",""eth_value"",""input_data"",""block_hash"",""l1_gas_price"",""l1_fee_precise"",""v"",""gas_price"",""status"",""effective_gas_price"",""block_timestamp"",""l1_submission_details"",""nonce"",""eth_value_precise_raw"",""tx_hash"",""from_address"",""max_priority_fee_per_gas"",""eth_value_precise"",""gas_limit"",""block_number"",""origin_function_signature"",""l1_fee_scalar"",""r"",""gas_used"",""s"",""max_fee_per_gas"",""to_address""]}]
+
+Please respond to a user's question about the Base blockchain with a SQL query.","what is the distrobution of Base transfers by transfer size?
+","with contracts as (
+select  ADDRESS ,SYMBOL 
+from base.core.dim_contracts
+group by 1 ,2 
+),
+prices as (
+select HOUR::date date ,   SYMBOL , 
+TOKEN_ADDRESS , DECIMALS,
+avg(price) price 
+from base.core.fact_hourly_token_prices
+group  by 1 , 2 ,3 ,4 order by 1 
+),
+wallet as (select  
+FROM_ADDRESS ,
+sum ((RAW_AMOUNT/pow(10,DECIMALS))*price) volume_usd
+from base.core.fact_token_transfers t join prices p on TOKEN_ADDRESS = CONTRACT_ADDRESS
+and p.date =t.BLOCK_TIMESTAMP::date  
+group by 1
+) 
+select case when volume_usd <1 then 'Less Than $1'
+when volume_usd BETWEEN 1 and 5 then '$1 - $5'
+when volume_usd BETWEEN 5 and 10 then '$5 - $10'
+when volume_usd BETWEEN 10 and 20 then '$10 - $20'
+when volume_usd BETWEEN 20 and 100 then '$20 - $100'
+when volume_usd BETWEEN 100 and 500 then '$100 - $500'
+when volume_usd BETWEEN 500 and 1000 then '$500 - $1K'
+when volume_usd BETWEEN 1000 and 10000 then '$1K - $10K'
+else 'More than $10K'
+end range ,
+count (FROM_ADDRESS) num_wallets 
+from wallet 
+group by 1 "

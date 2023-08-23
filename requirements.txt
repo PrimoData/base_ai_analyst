@@ -1,4 +1,7 @@
-matplotlib==3.7.1
+matplotlib
+plotly-express
 pandas==1.5.3
-pandasai==0.5.0
-streamlit==1.22.0
+streamlit
+openai
+flipside
+beautifulsoup4

@@ -3,6 +3,23 @@
     padding-top: 30px
 }
 
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+header {
+    visibility: hidden;
+}
+
+.block-container,
+.css-1544g2n {
+    padding-top: 30px
+}
+
 thead tr th:first-child {
     display: none
 }
@@ -16,19 +33,36 @@ td {
     font-size: 12px;
 }
 
-.stButton button {
+.stButton button,
+.stButton button:focus:not(:active) {
     background-color: blue;
     color: white;
+    border-radius: 0px;
+    border-color: blue;
 }
 
 .stButton button:hover {
-    background-color: green;
-    color: white;
-    border-color: green;
+    background-color: white;
+    color: blue;
+    border-radius: 0px;
+    border-color: blue;
 }
+
+.stTextInput>div {
+    border-radius: 0px;
+}
+
+.streamlit-expander {
+    border-radius: 0px;
+}
+
+.streamlit-expander:hover {
+    border-color: blue;
+}
+
 
 .streamlit-expanderHeader:hover,
 .css-1fcdlhc .streamlit-expanderHeader:hover svg {
     color: blue;
-    fill: blue
+    fill: blue;
 }
