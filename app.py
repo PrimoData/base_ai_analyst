@@ -1,7 +1,5 @@
 import streamlit as st
 import os
-from pandasai import PandasAI
-from pandasai.llm.openai import OpenAI
 import pandas as pd
 import requests
 import json
