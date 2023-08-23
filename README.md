@@ -5,7 +5,7 @@
 ![OpenAI](https://img.shields.io/badge/OpenAI-412991.svg?stylee&logo=OpenAI&logoColor=white)
 [![Code style: black](https://img.shields.io/badge/Code%20style-black-000000.svg)](https://github.com/psf/black)
 
-App link: 
+App link: https://base-ai.streamlit.app/
 
 ## TLDR
 Query Base blockchain data -> Create charts on the results.
